@@ -1,0 +1,7 @@
+---
+- name: Setup
+  hosts: node_exporter
+  gather_facts: yes
+  roles:
+    - name: "node_exporter"
+      node_exporter_action: "install"

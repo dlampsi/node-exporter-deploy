@@ -1,0 +1,14 @@
+---
+- name: Get systemd version
+  command: systemctl --version
+  changed_when: no
+  check_mode: no
+  register: __systemd_version
+  tags:
+    - skip_ansible_lint
+
+- name: Set systemd version fact
+  set_fact:
+    node_exporter_systemd_version: "{{ __systemd_version.stdout_lines[0] | regex_replace('^systemd\\s(\\d+).*$', '\\1') }}"
+
+- include: "{{ node_exporter_action }}.yml"
