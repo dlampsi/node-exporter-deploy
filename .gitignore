@@ -1,0 +1,20 @@
+# IDEs directories
+.idea
+.dev
+.vscode
+
+# OS
+.DS_Store
+
+# Local .env file
+.env*
+
+# Docker
+docker-compose.yml
+
+# Service fetched or builded artifacts.
+.artifacts
+
+# Temporary build files.
+build/*
+!build/Dockerfile
