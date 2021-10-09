@@ -25,3 +25,6 @@ jobs:
           SERVICE_INSTALL_TYPE: fetch
           SERVICE_FETCH_RELEASE: 1.2.2
         run: make artifact-fetch
+
+      - name: Testing infra prepare
+        run: make infra-docker-prepare

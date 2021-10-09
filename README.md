@@ -54,6 +54,18 @@ To install / update cloud instances run:
 make artifact
 ```
 
+### Infrastructure
+
+Cloud instances configurations stored into [terraform](terraform/) catalog. Currently automation supports Centos 8 based OS image, with x86 arcitecture artifacts.
+
+You can specify some virtual machine params (like instance name, preset etc) in the [terraform/vars.tf](terraform/vars.tf) file.
+
+To create / updare cloud instances configuration run:
+
+```bash
+make infra
+```
+
 ## Contibuting
 
 Contributing flow:

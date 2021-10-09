@@ -21,7 +21,7 @@ RUNNER ?= docker
 SSH_ACCESS_KEY ?= $(DEPLOY_KEY_PATH)
 
 .PHONY: all
-all: prechecks prepare artifact ## Performs full automation cycle: prepares, make artifact
+all: prechecks prepare artifact infra ## Performs full automation cycle: prepares, make artifact, develops cloud infrastructure.
 
 
 .PHONY: info
@@ -80,3 +80,31 @@ artifact-build-docker:
 artifact-build-local:
 	@bash $(ARTIFACT_SCRIPT) build
 
+# -----------------------------------------------------------------------------
+.PHONY: infra infra-docker infra-local
+infra: env_info infra-$(RUNNER)
+
+TERRAFORM_IMG := hashicorp/terraform:1.0.8
+TERRAFORM_IMG_ARGS = -v ${PWD}/terraform:/deploy/terraform -v ${PWD}/ansible:/deploy/ansible -v $(SSH_ACCESS_KEY):/tmp/id_rsa
+TERRAFORM_CHRID_ARG = -chdir=/deploy/terraform
+
+.PHONY: infra-docker-prepare infra-docker-check
+infra-docker: infra-docker-prepare
+	@cd terraform && docker run --rm $(EXT_ENV_FILE_PARAM) $(TERRAFORM_IMG_ARGS) $(TERRAFORM_IMG) $(TERRAFORM_CHRID_ARG) apply plan
+
+infra-docker-prepare: infra-docker-check
+	@docker run --rm $(ENV_FILE_PARAM) $(TERRAFORM_IMG_ARGS) $(TERRAFORM_IMG) $(TERRAFORM_CHRID_ARG) plan -out=plan -var="private_ssh_key=/tmp/id_rsa"
+
+infra-docker-check:
+	@docker run --rm $(ENV_FILE_PARAM) $(TERRAFORM_IMG_ARGS) $(TERRAFORM_IMG) $(TERRAFORM_CHRID_ARG) init && \
+		docker run --rm $(ENV_FILE_PARAM) $(TERRAFORM_IMG_ARGS) $(TERRAFORM_IMG) $(TERRAFORM_CHRID_ARG) validate
+
+.PHONY: infra-local-prepare infra-local-check
+infra-local: infra-local-prepare
+	@cd terraform && terraform apply plan
+
+infra-local-prepare: infra-local-check
+	@cd terraform && terraform plan -out=plan -var="private_ssh_key=$(SSH_ACCESS_KEY)"
+
+infra-local-check:
+	@cd terraform && terraform init && terraform validate
