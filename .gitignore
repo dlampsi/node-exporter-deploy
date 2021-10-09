@@ -22,4 +22,4 @@ build/*
 # Terraform
 terraform/.terraform
 terraform/plan*
-terraform/*.tfstate.*
+terraform/state/*.tfstate.*

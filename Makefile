@@ -21,7 +21,7 @@ RUNNER ?= docker
 SSH_ACCESS_KEY ?= $(DEPLOY_KEY_PATH)
 
 .PHONY: all
-all: prechecks prepare artifact infra install tests ## Performs full automation cycle: prepares, make artifact, develops cloud infrastructure setup app and run tests.
+all: prechecks prepare artifact infra install ## Performs full automation cycle: prepares, make artifact, deploys cloud infrastructure, installs app and run tests.
 
 .PHONY: info
 env_info: ## Prints current env info.
@@ -35,12 +35,12 @@ env_file:
 .PHONY: prechecks
 prechecks: env_info ## Performs pre-checks for a local development environment.
 	@bash scripts/prechecks.sh $(RUNNER) && \
-		echo "Everyhing is ok"
+		echo "Prechecks are successful"
 
 
 # -----------------------------------------------------------------------------
 .PHONY: prepare prepare-docker prepare-local
-prepare: env_info prepare-$(RUNNER) ## Prepare develop environment for actions.
+prepare: env_info prepare-$(RUNNER) ## Prepares develop environment for further actions.
 	@echo "Prepared for a '$(RUNNER)' runner"
 
 DOCKER_BUILDER_IMG = node-exporter-builder:local
@@ -58,7 +58,7 @@ prepare-local:
 INSTALL_TYPE ?= $(SERVICE_INSTALL_TYPE)
 
 .PHONY: artifact artifact-fetch artifact-build
-artifact: env_info artifact-$(INSTALL_TYPE) ## Gets service artifact for further deploy actions.
+artifact: env_info artifact-$(INSTALL_TYPE) ## Downloads or builds service artifact for further deploy actions.
 
 ARTIFACT_IMG_ARGS = $(ENV_FILE_PARAM) -v $(PWD)/.artifacts:/app/.artifacts
 ARTIFACT_SCRIPT = scripts/aritfact.sh
@@ -83,7 +83,7 @@ artifact-build-local:
 
 # -----------------------------------------------------------------------------
 .PHONY: infra infra-docker infra-local
-infra: env_info infra-$(RUNNER)
+infra: env_info infra-$(RUNNER) ## Deploys or update cloud infrastructure.
 
 TERRAFORM_IMG := hashicorp/terraform:1.0.8
 TERRAFORM_IMG_ARGS = -v ${PWD}/terraform:/deploy/terraform -v ${PWD}/ansible:/deploy/ansible -v $(SSH_ACCESS_KEY):/tmp/id_rsa
@@ -116,7 +116,7 @@ ANSIBLE_IMG_ARGS = $(ENV_FILE_PARAM) -v ${PWD}/ansible:/app/ansible -v $(SSH_ACC
 ANSIBLE_ARGS = -e ansible_ssh_private_key_file=$(SSH_ACCESS_KEY)
 
 .PHONY: install install-docker install-local
-install: env_info install-$(RUNNER) ## Installs the service to infrastructure hosts.
+install: env_info install-$(RUNNER) tests ## Installs the service to infrastructure hosts and perform tests.
 
 install-docker:
 	@docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) playbooks/install.yml $(ANSIBLE_ARGS)
@@ -127,7 +127,7 @@ install-local:
 
 # -----------------------------------------------------------------------------
 .PHONY: configure configure-docker configure-local
-configure: env_info configure-$(RUNNER) ## Configures service.
+configure: env_info configure-$(RUNNER) tests ## Configures deployed services.
 
 ANSIBLE_CONFIGURE_CMD = playbooks/configure.yml $(ANSIBLE_ARGS)
 
