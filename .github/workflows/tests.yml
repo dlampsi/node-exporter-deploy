@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: ['feature/*', 'hotfix/*']
+    paths-ignore:
+      - README.md
+      - LICENSE
+
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Testing prepare
+        env:
+          RUNNER: docker
+        run: make env_file prepare
+
+      - name: Testing local artifact fetch
+        env:
+          RUNNER: local
+          SERVICE_INSTALL_TYPE: fetch
+          SERVICE_FETCH_RELEASE: 1.2.2
+        run: make artifact-fetch
