@@ -7,7 +7,8 @@ node_expoter_binary_path: "../../.artifacts/node_exporter"
 
 # Collectors to enable.
 node_exporter_enabled_collectors:
-  - "systemd"
+  - systemd
+  # - interrupts
 
 # Collectors to disable.
 node_exporter_disabled_collectors: []

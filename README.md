@@ -30,12 +30,16 @@ make help
 ```
 
 ### Configuration
+
 Automation configured via environent vaiables. Required variables and their descriptions provided in [.dev.env](.dev.env) fie.
 
 To prepare environment for automation run use command:
+
 ```bash
 make prepare
 ```
+
+For a Docker runner prepare action builds docker images that will be used in some further actions.
 
 ## Run
 
@@ -43,7 +47,7 @@ Perform full pipeline steps:
 ```bash
 make all
 ```
-**WARNING**: Pay attention that 'make all' command takes time, especially when you choose build artifact action.
+**WARNING**: Pay attention that `make all` command takes time, especially when you choose build artifact action.
 
 ### Service install
 
@@ -53,6 +57,22 @@ To install / update cloud instances run:
 ```bash
 make artifact
 ```
+
+Config example for installation from released build:
+
+```bash
+SERVICE_INSTALL_TYPE=fetch
+SERVICE_FETCH_RELEASE=1.2.2
+```
+
+Config example for build package from sources:
+
+```bash
+SERVICE_INSTALL_TYPE=build
+SERVICE_BUILD_BRANCH=dummy
+SERVICE_BUILD_COMMIT=2a737fd69cd80fa8d03fe0df45d7c9ea3579b9ed
+```
+
 
 ### Infrastructure
 
