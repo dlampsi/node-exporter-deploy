@@ -1,0 +1,41 @@
+---
+- name: Creating OS group
+  group:
+    name: "{{ node_exporter_os_group }}"
+    state: present
+    system: yes
+
+- name: Creating OS user
+  user:
+    name: "{{ node_exporter_os_user }}"
+    groups: "{{ node_exporter_os_group }}"
+    append: yes
+    shell: /usr/sbin/nologin
+    system: no
+    create_home: no
+
+- name: Upload binary
+  copy:
+    src: "{{ node_expoter_binary_path }}"
+    dest: "/usr/local/bin/node_exporter"
+    mode: 0755
+    owner: root
+    group: root
+  notify: restart_node_exporter
+  when: not ansible_check_mode 
+
+- name: Deploying systemd service file
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart_node_exporter
+
+- name: Ensuring that service is enabled on boot
+  systemd:
+    daemon_reload: yes
+    name: node_exporter
+    enabled: yes
+    state: started

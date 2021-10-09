@@ -1,0 +1,13 @@
+---
+# Service exposed port.
+node_exporter_port: "9100"
+
+# Local path to node exporter binary to upload to the hosts.
+node_expoter_binary_path: "../../.artifacts/node_exporter"
+
+# Collectors to enable.
+node_exporter_enabled_collectors:
+  - "systemd"
+
+# Collectors to disable.
+node_exporter_disabled_collectors: []

@@ -66,6 +66,32 @@ To create / updare cloud instances configuration run:
 make infra
 ```
 
+Terraform apply actions also crates inventory file and stores it in the `ansible/` directory for further usage in ansible-playbooks.
+
+### Service configuration
+
+Node exporter configuration stored (and can be changed) in [ansible/group_vars/all.yml](ansible/group_vars/all.yml) file.
+
+To update deployed service configuration run:
+
+```bash
+make config
+```
+
+### Tests
+
+Follow tests available and runs on tests action:
+1. Service has been installed
+2. Service is running
+3. Ensures that service correct version/revision is being used
+4. Configuration changes are applied and correct
+5. Service listens to necessary ports
+
+To perfrom deployed service tests run:
+```bash
+make tests
+```
+
 ## Contibuting
 
 Contributing flow:

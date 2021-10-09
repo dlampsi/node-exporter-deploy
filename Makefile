@@ -21,8 +21,7 @@ RUNNER ?= docker
 SSH_ACCESS_KEY ?= $(DEPLOY_KEY_PATH)
 
 .PHONY: all
-all: prechecks prepare artifact infra ## Performs full automation cycle: prepares, make artifact, develops cloud infrastructure.
-
+all: prechecks prepare artifact infra install tests ## Performs full automation cycle: prepares, make artifact, develops cloud infrastructure setup app and run tests.
 
 .PHONY: info
 env_info: ## Prints current env info.
@@ -45,9 +44,11 @@ prepare: env_info prepare-$(RUNNER) ## Prepare develop environment for actions.
 	@echo "Prepared for a '$(RUNNER)' runner"
 
 DOCKER_BUILDER_IMG = node-exporter-builder:local
+DOCKER_DEPLOYER_IMG = node-exporter-deployer:local
 
 prepare-docker:
-	@docker image build -t $(DOCKER_BUILDER_IMG) -f build/Dockerfile .
+	@docker image build -t $(DOCKER_BUILDER_IMG) -f build/Dockerfile . \
+		&& docker image build -t $(DOCKER_DEPLOYER_IMG) -f ansible/Dockerfile .\
 
 prepare-local:
 	@echo "Nothing to prepare on local"
@@ -108,3 +109,58 @@ infra-local-prepare: infra-local-check
 
 infra-local-check:
 	@cd terraform && terraform init && terraform validate
+
+
+# -----------------------------------------------------------------------------
+ANSIBLE_IMG_ARGS = $(ENV_FILE_PARAM) -v ${PWD}/ansible:/app/ansible -v $(SSH_ACCESS_KEY):/home/ansible/.ssh/id_rsa -v $(PWD)/.artifacts:/app/.artifacts
+ANSIBLE_ARGS = -e ansible_ssh_private_key_file=$(SSH_ACCESS_KEY)
+
+.PHONY: install install-docker install-local
+install: env_info install-$(RUNNER) ## Installs the service to infrastructure hosts.
+
+install-docker:
+	@docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) playbooks/install.yml $(ANSIBLE_ARGS)
+
+install-local:
+	@cd ansible && ansible-playbook playbooks/install.yml $(ANSIBLE_ARGS)
+
+
+# -----------------------------------------------------------------------------
+.PHONY: configure configure-docker configure-local
+configure: env_info configure-$(RUNNER) ## Configures service.
+
+ANSIBLE_CONFIGURE_CMD = playbooks/configure.yml $(ANSIBLE_ARGS)
+
+configure-docker:
+	@docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) $(ANSIBLE_CONFIGURE_CMD)
+
+configure-local:
+	@cd ansible && ansible-playbook $(ANSIBLE_CONFIGURE_CMD)
+
+
+# -----------------------------------------------------------------------------
+.PHONY: tests tests-docker tests-local
+tests: env_info tests-$(RUNNER) ## Testing existing deployments.
+
+ANSIBLE_TESTS_CMD = playbooks/tests.yml $(ANSIBLE_ARGS) -e node_exporter_version=$(SERVICE_FETCH_RELEASE) -e node_exporter_release_branch=$(SERVICE_BUILD_BRANCH) -e node_exporter_release_commit=$(SERVICE_BUILD_COMMIT)
+
+tests-docker:
+	@docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) $(ANSIBLE_TESTS_CMD)
+
+tests-local:
+	@cd ansible && ansible-playbook $(ANSIBLE_TESTS_CMD)
+
+
+# -----------------------------------------------------------------------------
+.PHONY: ansible-tests ansible-tests-docker ansible-tests-local
+ansible-tests: ansible-tests-$(RUNNER)
+
+ansible-tests-docker:
+	@docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) playbooks/install.yml $(ANSIBLE_ARGS) --syntax-check && \
+		docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) $(ANSIBLE_CONFIGURE_CMD) --syntax-check && \
+		docker run --rm $(ANSIBLE_IMG_ARGS) $(DOCKER_DEPLOYER_IMG) $(ANSIBLE_TESTS_CMD) --syntax-check
+
+ansible-tests-local:
+	@cd ansible && ansible-playbook $(ANSIBLE_CONFIGURE_CMD) --syntax-check && \
+		ansible-playbook playbooks/install.yml $(ANSIBLE_ARGS) --syntax-check && \
+		ansible-playbook $(ANSIBLE_TESTS_CMD) --syntax-check

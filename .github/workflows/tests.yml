@@ -28,3 +28,6 @@ jobs:
 
       - name: Testing infra prepare
         run: make infra-docker-prepare
+
+      - name: Testing ansible playbooks
+        run: make ansible-tests

@@ -1,0 +1,100 @@
+---
+# ---------------------------------------------
+# Installation
+# ---------------------------------------------
+- name: "Ensuring that binary file installed"
+  shell: "hash node_exporter"
+  changed_when: no
+
+# ---------------------------------------------
+# Version
+# ---------------------------------------------
+- block:
+  - name: "Gathering service version"
+    shell: "node_exporter --version | head -1 | awk '{ print $3 }'"
+    register: "fetched_version"
+    changed_when: no
+
+  - fail:
+      msg: "Unexpected build version '{{ fetched_version.stdout }}'. Expected: '{{ node_exporter_version }}'"
+    when: fetched_version.stdout != node_exporter_version
+  when:
+    - node_exporter_version != ""
+
+- block:
+  - name: "Gathering service revision"
+    shell: "node_exporter --version | head -1 | awk '{ print $7 }' | sed 's/.$//'"
+    register: "fetched_revision"
+    changed_when: no
+
+  - fail:
+      msg: "Unexpected build revision '{{ fetched_revision.stdout }}'. Expected: '{{ node_exporter_release_commit }}'"
+    when: fetched_revision.stdout != node_exporter_release_commit
+  when:
+    - node_exporter_release_commit is defined
+    - node_exporter_release_commit != ""
+
+# ---------------------------------------------
+# Service
+# ---------------------------------------------
+- name: "Gathering services info"
+  service_facts:
+  register: services_state
+
+- fail: msg="Systemd service is undefined"
+  when: services_state.ansible_facts.services['node_exporter.service'] is undefined
+
+- set_fact:
+    node_exporeter_service: "{{ services_state.ansible_facts.services['node_exporter.service'] }}"
+
+- fail:
+    msg: "Bad service status: '{{ node_exporeter_service.status }}'"
+  when: node_exporeter_service.status != "enabled"
+
+- fail:
+    msg: "Bad service state: '{{ node_exporeter_service.state }}'"
+  when: node_exporeter_service.state != "running"
+
+# ---------------------------------------------
+# Ports
+# ---------------------------------------------
+- name: "Checking service ports"
+  uri:
+    url: "http://{{ ansible_hostname }}:{{ node_exporter_port }}/metrics"
+    method: GET
+  register: site_resp
+  until: site_resp.status == 200
+  retries: 0
+  delay: 0
+
+# ---------------------------------------------
+# Config
+# ---------------------------------------------
+- name: Get current config checksum
+  stat:
+    path : "/etc/systemd/system/node_exporter.service"
+  register: cur_config
+
+- set_fact:
+    cur_config_sha1: "{{ cur_config.stat.checksum }}"
+
+- name: Creating temporary config
+  template:
+    src: node_exporter.service.j2
+    dest: /tmp/node_exporter-{{ ansible_hostname }}.service
+    owner: root
+    group: root
+    mode: 0644
+  changed_when: no
+
+- name: Get cksum of my First file
+  stat:
+    path : "/tmp/node_exporter-{{ ansible_hostname }}.service"
+  register: new_config
+
+- set_fact:
+    new_config_sha1: "{{ new_config.stat.checksum }}"
+
+- fail:
+    msg: "Configuration no actual"
+  when: cur_config_sha1 != new_config_sha1
