@@ -19,9 +19,6 @@ jobs:
           RUNNER: docker
         run: make env_file prepare
 
-      - name: Testing infra prepare
-        run: make infra-docker-prepare
-
       - name: Testing local artifact fetch
         env:
           RUNNER: local
