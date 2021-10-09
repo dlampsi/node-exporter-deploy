@@ -18,3 +18,8 @@ docker-compose.yml
 # Temporary build files.
 build/*
 !build/Dockerfile
+
+# Terraform
+terraform/.terraform
+terraform/plan*
+terraform/*.tfstate.*
