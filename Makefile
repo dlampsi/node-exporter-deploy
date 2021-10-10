@@ -40,7 +40,7 @@ prechecks: env_info ## Performs pre-checks for a local development environment.
 
 # -----------------------------------------------------------------------------
 .PHONY: prepare prepare-docker prepare-local
-prepare: env_info prepare-$(RUNNER) ## Prepares develop environment for further actions.
+prepare: env_file env_info prepare-$(RUNNER) ## Prepares develop environment for further actions.
 	@echo "Prepared for a '$(RUNNER)' runner"
 
 DOCKER_BUILDER_IMG = node-exporter-builder:local

@@ -2,38 +2,63 @@
 
 This repository provides set of automation tools to deploy and manage deployments of [Node exporter](https://github.com/prometheus/node_exporter) service.
 
-Automation provides actions to setup cloud based instance(s) and install, configure and test a Node exporter into them.
+Automation provides actions to setup cloud based instance(s) and install, configure and test a node exporter into them.
 
-Automation allows to configure Node expoter installation via direct released build or via build from source repository with defined branch and revision.
+Automation allows to configure node expoter installation via direct released build or via build from source repository with defined branch and revision.
 
 ## Developement and run
 
 ### Prerequisites
 
-1. [GNU Make](https://www.gnu.org/software/make/)
+1. [GNU Make 3.81](https://www.gnu.org/software/make/)
 2. Depends on the choice of automation run type:
-    - [Docker-CE](https://www.docker.com/get-started)
-    - [Go 1.16.8](https://golang.org/dl/), [Terraform 1.0.8](https://www.terraform.io), [Ansible 2.9.9](https://www.ansible.com)
+    - [Docker](https://docs.docker.com/get-docker/)
+    - [Go 1.16.9](https://golang.org/dl/), [Terraform 1.0.8](https://www.terraform.io), [Ansible 2.9.9](https://www.ansible.com)
 
 Automation can be performed via Docker containers (which is recommended and enabled by default) or via direct tools local run.
 
-You should check your dev environment via:
+You should check your dev environment by running:
 ```bash
 make prechecks
 ```
 
 ## Usage
 
-To get all available pipeline commands with their descriptions use:
+To get all available automation commands with their descriptions, run:
 ```bash
 make help
 ```
 
+### TLDR
+
+Common events and commands that you should run on them:
+
+```bash
+# Want to check and prepare development env.
+make prechecks prepare
+
+# First time run. Want to perform all actions from scratch.
+make all
+
+# Cloud infrastructure updates.
+make infra
+
+# When node exporter version is updated.
+make artifact install
+
+# Node exporter configuration changed.
+make config
+
+# Whant only to test deployed services.
+make tests
+```
+
+
 ### Configuration
 
-Automation configured via environent vaiables. Required variables and their descriptions provided in [.dev.env](.dev.env) fie.
+Automation uses environment variables as configuration source. Available variables and their descriptions provided in [.dev.env](.dev.env) fie.
 
-To prepare environment for automation run use command:
+To prepare environment for automation, run:
 
 ```bash
 make prepare
@@ -43,22 +68,26 @@ For a Docker runner prepare action builds docker images that will be used in som
 
 ## Run
 
-Perform full pipeline steps:
+To perform full pipeline steps, run:
+
+> Note that this command takes time, especially when you choose the 'build' action of the artifact.
+
 ```bash
 make all
 ```
-**WARNING**: Pay attention that `make all` command takes time, especially when you choose build artifact action.
 
-### Service install
+### Service install type
 
-Service installation can be performed via direct released build or via build from source repository with defined branch and revision. This behaviour can be specified via `SERVICE_INSTALL_TYPE` env variable.
+Node exporter installation can be performed via direct released build or via build from source repository with defined branch and revision.
 
-To install / update cloud instances run:
+This behaviour can be specified via `SERVICE_INSTALL_TYPE` env variable.
+
+To make node exporter atrifact with chosed insatll type run:
 ```bash
 make artifact
 ```
 
-Config example for installation from released build:
+Config example for installation from released build (used by default):
 
 ```bash
 SERVICE_INSTALL_TYPE=fetch
@@ -69,12 +98,11 @@ Config example for build package from sources:
 
 ```bash
 SERVICE_INSTALL_TYPE=build
-SERVICE_BUILD_BRANCH=dummy
+SERVICE_BUILD_BRANCH=branch-name
 SERVICE_BUILD_COMMIT=2a737fd69cd80fa8d03fe0df45d7c9ea3579b9ed
 ```
 
-
-### Infrastructure
+### Cloud infrastructure
 
 Cloud instances configurations stored into [terraform](terraform/) catalog. Currently automation supports Centos 8 based OS image, with x86 arcitecture artifacts.
 
@@ -86,7 +114,7 @@ To create / updare cloud instances configuration run:
 make infra
 ```
 
-Terraform apply actions also crates inventory file and stores it in the `ansible/` directory for further usage in ansible-playbooks.
+Terraform apply action also crates inventory file and stores it in the `ansible/` directory for further usage in ansible-playbooks.
 
 ### Service configuration
 
@@ -108,6 +136,7 @@ Follow tests available and runs on tests action:
 5. Service listens to necessary ports
 
 To perfrom deployed service tests run:
+
 ```bash
 make tests
 ```
