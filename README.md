@@ -90,7 +90,7 @@ Terraform apply actions also crates inventory file and stores it in the `ansible
 
 ### Service configuration
 
-Node exporter configuration stored (and can be changed) in [ansible/group_vars/all.yml](ansible/group_vars/all.yml) file.
+Node exporter configuration stored (and can be changed) in [ansible/group_vars/node_exporter.yml](ansible/group_vars/node_exporter.yml) file.
 
 To update deployed service configuration run:
 
