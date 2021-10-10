@@ -70,7 +70,7 @@ For a Docker runner prepare action builds docker images that will be used in som
 
 To perform full pipeline steps, run:
 
-> Pay attention that command takes time, especially when you choose build artifact action.
+> Note that this command takes time, especially when you choose the 'build' action of the artifact.
 
 ```bash
 make all
